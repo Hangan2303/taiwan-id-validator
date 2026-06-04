@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taiwan ID Validator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#00366f',
+            'primary-container': '#004c99',
+            'on-primary': '#ffffff',
+            surface: '#f8f9fa',
+            'surface-low': '#f3f4f5',
+            'surface-lowest': '#ffffff',
+            'surface-high': '#eceef0',
+            'on-surface': '#1a1c1e',
+            'on-surface-variant': '#424751',
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+            display: ['Manrope', 'sans-serif'],
+            mono: ['"JetBrains Mono"', '"Fira Code"', 'ui-monospace', 'monospace'],
+          },
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    h1,h2,h3,h4 { font-family: 'Manrope', sans-serif; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-thumb { background: rgba(66,71,81,0.15); border-radius: 9999px; }
+    .tab-underline { border-bottom: 2px solid #00366f; color: #00366f; }
+    .tab-inactive { border-bottom: 2px solid transparent; color: #424751; }
+  </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-primary text-white px-6 py-8">
+    <div class="max-w-3xl mx-auto flex items-center gap-4">
+      <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-extrabold tracking-tight">Taiwan ID Validator</h1>
+        <p class="text-white/70 text-sm mt-0.5">National ID · Unified Business Number</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main tab bar -->
+  <div class="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div class="max-w-3xl mx-auto px-6 flex gap-1">
+      <button id="tab-national" onclick="switchTab('national')" class="flex items-center gap-2 px-5 py-4 text-sm font-semibold tab-underline transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+        National ID
+      </button>
+      <button id="tab-business" onclick="switchTab('business')" class="flex items-center gap-2 px-5 py-4 text-sm font-semibold tab-inactive transition-all hover:text-on-surface">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 0-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+        Unified Business Number
+      </button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <main class="max-w-3xl mx-auto px-6 py-8">
+
+    <!-- National ID Panel -->
+    <div id="panel-national">
+      <div class="mb-6 p-4 rounded-xl bg-surface-low border border-gray-200 text-sm text-on-surface-variant">
+        <p><span class="font-semibold text-on-surface">National ID (中華民國國民身分證):</span> 1 letter + 9 digits · D1 = 1 (male) / 2 (female) · Modulo 10 checksum</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-200 p-6">
+
+        <!-- Sub-tabs -->
+        <div class="flex gap-2 bg-surface-high rounded-xl p-1 mb-6">
+          <button id="nsub-validate" onclick="switchNationalSubTab('validate')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-white text-primary shadow-sm transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            Validate
+          </button>
+          <button id="nsub-generate" onclick="switchNationalSubTab('generate')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-on-surface-variant transition-all hover:text-on-surface">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Generate
+          </button>
+        </div>
+
+        <!-- Validate sub-tab -->
+        <div id="n-validate-pane">
+          <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Enter National ID</label>
+          <div class="flex gap-3 mb-4">
+            <input id="n-input" type="text" maxlength="10" placeholder="e.g. A123456789"
+              oninput="this.value=this.value.toUpperCase(); document.getElementById('n-result').innerHTML=''"
+              onkeydown="if(event.key==='Enter') validateNational()"
+              class="flex-1 font-mono text-lg px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-primary transition-all tracking-widest placeholder:text-gray-300 placeholder:text-base placeholder:font-sans placeholder:tracking-normal" />
+            <button onclick="validateNational()" class="px-6 py-3 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary-container transition-colors">Validate</button>
+          </div>
+          <div id="n-result"></div>
+        </div>
+
+        <!-- Generate sub-tab -->
+        <div id="n-generate-pane" class="hidden">
+          <button onclick="generateNational()" class="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary-container transition-colors mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            Generate
+          </button>
+          <div id="n-gen-result"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Business Number Panel -->
+    <div id="panel-business" class="hidden">
+      <div class="mb-6 p-4 rounded-xl bg-surface-low border border-gray-200 text-sm text-on-surface-variant space-y-1">
+        <p><span class="font-semibold text-on-surface">Unified Business Number (統一編號):</span> 8 digits · Weights [1,2,1,2,1,2,4,1] · Modulo 5 checksum</p>
+        <p><span class="font-semibold text-on-surface">D7 = 7 exception:</span> 7×4=28→10, treated as 1 or 0 — either sum passing modulo 5 makes the number valid.</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-200 p-6">
+
+        <!-- Sub-tabs -->
+        <div class="flex gap-2 bg-surface-high rounded-xl p-1 mb-6">
+          <button id="bsub-validate" onclick="switchBizSubTab('validate')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-white text-primary shadow-sm transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            Validate
+          </button>
+          <button id="bsub-generate" onclick="switchBizSubTab('generate')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-on-surface-variant transition-all hover:text-on-surface">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Generate
+          </button>
+        </div>
+
+        <!-- Validate sub-tab -->
+        <div id="b-validate-pane">
+          <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Enter Unified Business Number (統一編號)</label>
+          <div class="flex gap-3 mb-4">
+            <input id="b-input" type="text" maxlength="8" placeholder="e.g. 12345670"
+              oninput="this.value=this.value.replace(/\D/g,'').slice(0,8); document.getElementById('b-result').innerHTML=''"
+              onkeydown="if(event.key==='Enter') validateBiz()"
+              class="flex-1 font-mono text-lg px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-primary transition-all tracking-widest placeholder:text-gray-300 placeholder:text-base placeholder:font-sans placeholder:tracking-normal" />
+            <button onclick="validateBiz()" class="px-6 py-3 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary-container transition-colors">Validate</button>
+          </div>
+          <div id="b-result"></div>
+        </div>
+
+        <!-- Generate sub-tab -->
+        <div id="b-generate-pane" class="hidden">
+          <p class="text-sm text-on-surface-variant mb-4">Generates a random 8-digit number that passes the modulo-5 checksum. When the 7th digit is 7, both sum paths are validated.</p>
+          <button onclick="generateBiz()" class="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary-container transition-colors mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            Generate
+          </button>
+          <div id="b-gen-result"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="max-w-3xl mx-auto px-6 pb-8 text-center text-xs text-gray-400">
+    Taiwan National ID · Unified Business Number — checksum validation per ROC government specification
+  </footer>
+
+<script>
+// ─── Validation Library ───────────────────────────────────────────────────────
+
+const LETTER_CODES = {
+  A:10,B:11,C:12,D:13,E:14,F:15,G:16,H:17,I:34,
+  J:18,K:19,L:20,M:21,N:22,O:35,P:23,Q:24,R:25,
+  S:26,T:27,U:28,V:29,W:32,X:30,Y:31,Z:33
+};
+const LETTERS = Object.keys(LETTER_CODES);
+const BIZ_WEIGHTS = [1,2,1,2,1,2,4,1];
+
+function validateNationalIdLogic(input) {
+  const id = input.trim().toUpperCase();
+  if (id.length !== 10) return { error: 'Must be exactly 10 characters (1 letter + 9 digits).' };
+  const letter = id[0];
+  if (!(letter in LETTER_CODES)) return { error: 'First character must be a letter A–Z.' };
+  if (!/^\d{9}$/.test(id.slice(1))) return { error: 'Characters 2–10 must all be digits.' };
+
+  const code = LETTER_CODES[letter];
+  const x1 = Math.floor(code / 10), x2 = code % 10;
+  const digits = id.slice(1).split('').map(Number);
+  const d1 = digits[0];
+  if (d1 !== 1 && d1 !== 2) return { error: 'Second character must be 1 (male) or 2 (female).' };
+
+  const steps = [
+    {pos:'X₁ (letter, high)', val:x1, w:1, contrib:x1*1},
+    {pos:'X₂ (letter, low)',  val:x2, w:9, contrib:x2*9},
+    {pos:'D1 (gender/type)',  val:digits[0], w:8, contrib:digits[0]*8},
+    {pos:'D2', val:digits[1], w:7, contrib:digits[1]*7},
+    {pos:'D3', val:digits[2], w:6, contrib:digits[2]*6},
+    {pos:'D4', val:digits[3], w:5, contrib:digits[3]*5},
+    {pos:'D5', val:digits[4], w:4, contrib:digits[4]*4},
+    {pos:'D6', val:digits[5], w:3, contrib:digits[5]*3},
+    {pos:'D7', val:digits[6], w:2, contrib:digits[6]*2},
+    {pos:'D8', val:digits[7], w:1, contrib:digits[7]*1},
+    {pos:'D9 (checksum)',     val:digits[8], w:1, contrib:digits[8]*1},
+  ];
+  const total = steps.reduce((s,r)=>s+r.contrib, 0);
+  return { valid: total%10===0, steps, total };
+}
+
+function generateNationalIdLogic() {
+  const letter = LETTERS[Math.floor(Math.random()*26)];
+  const code = LETTER_CODES[letter];
+  const x1 = Math.floor(code/10), x2 = code%10;
+  const d1 = Math.random()<0.5?1:2;
+  const body = Array.from({length:7},()=>Math.floor(Math.random()*10));
+  const d8s = [d1,...body];
+  const partial = x1*1+x2*9+d8s[0]*8+d8s[1]*7+d8s[2]*6+d8s[3]*5+d8s[4]*4+d8s[5]*3+d8s[6]*2+d8s[7]*1;
+  const d9 = (10 - partial%10)%10;
+  const allDigits = [...d8s, d9];
+  return { id: letter+allDigits.join(''),
+    steps:[
+      {pos:'X₁ (letter, high)', val:x1, w:1, contrib:x1*1},
+      {pos:'X₂ (letter, low)',  val:x2, w:9, contrib:x2*9},
+      {pos:'D1 (gender/type)',  val:allDigits[0], w:8, contrib:allDigits[0]*8},
+      {pos:'D2', val:allDigits[1], w:7, contrib:allDigits[1]*7},
+      {pos:'D3', val:allDigits[2], w:6, contrib:allDigits[2]*6},
+      {pos:'D4', val:allDigits[3], w:5, contrib:allDigits[3]*5},
+      {pos:'D5', val:allDigits[4], w:4, contrib:allDigits[4]*4},
+      {pos:'D6', val:allDigits[5], w:3, contrib:allDigits[5]*3},
+      {pos:'D7', val:allDigits[6], w:2, contrib:allDigits[6]*2},
+      {pos:'D8', val:allDigits[7], w:1, contrib:allDigits[7]*1},
+      {pos:'D9 (checksum)',     val:allDigits[8], w:1, contrib:allDigits[8]*1},
+    ],
+    total: x1*1+x2*9+allDigits[0]*8+allDigits[1]*7+allDigits[2]*6+allDigits[3]*5+allDigits[4]*4+allDigits[5]*3+allDigits[6]*2+allDigits[7]*1+allDigits[8]*1
+  };
+}
+
+function splitSum(n) { return n<10 ? n : Math.floor(n/10)+(n%10); }
+
+function validateBizLogic(input) {
+  const s = input.trim();
+  if (s.length!==8) return { error: 'Must be exactly 8 digits.' };
+  if (!/^\d{8}$/.test(s)) return { error: 'Must contain only digits.' };
+  const digits = s.split('').map(Number);
+  const d7Special = digits[6]===7;
+  const steps = [];
+  let baseSum=0, pos6=0;
+  for (let i=0;i<8;i++) {
+    const w=BIZ_WEIGHTS[i], prod=digits[i]*w, after=splitSum(prod);
+    let note='';
+    if (i===6&&d7Special) { note='7×4=28→2+8=10→special: counts as 1 or 0'; pos6=1; }
+    else { baseSum+=after; if(prod>=10) note=`${prod}→${Math.floor(prod/10)}+${prod%10}=${after}`; }
+    steps.push({pos:`D${i+1}`,digit:digits[i],w,prod,after,note});
+  }
+  const sum1 = baseSum+(d7Special?1:0);
+  const sum2 = d7Special ? baseSum+0 : null;
+  const valid = d7Special ? (sum1%5===0||sum2%5===0) : (sum1%5===0);
+  return { valid, steps, d7Special, sum1, sum2 };
+}
+
+function generateBizLogic() {
+  for (let a=0;a<50;a++) {
+    const d17=Array.from({length:7},()=>Math.floor(Math.random()*10));
+    const d7Special=d17[6]===7;
+    let partial=0;
+    for (let i=0;i<7;i++) { if(!(i===6&&d7Special)) partial+=splitSum(d17[i]*BIZ_WEIGHTS[i]); }
+    const pos6contrib=d7Special?1:0;
+    for (let d8=0;d8<=9;d8++) {
+      const s1=partial+pos6contrib+d8;
+      const s2=d7Special?partial+0+d8:null;
+      if(s1%5===0||(s2!==null&&s2%5===0)) {
+        const digits=[...d17,d8];
+        const r=validateBizLogic(digits.join(''));
+        return {...r, number:digits.join('')};
+      }
+    }
+  }
+  // fallback guaranteed valid
+  return validateBizLogic('12345670');
+}
+
+// ─── UI State ─────────────────────────────────────────────────────────────────
+
+let currentNStepsVisible = false;
+let currentBStepsVisible = false;
+
+function switchTab(tab) {
+  ['national','business'].forEach(t => {
+    document.getElementById('panel-'+t).classList.toggle('hidden', t!==tab);
+    const btn = document.getElementById('tab-'+t);
+    btn.className = btn.className.replace(/tab-(underline|inactive)/g,'') +
+      (t===tab ? ' tab-underline' : ' tab-inactive');
+  });
+}
+
+function switchNationalSubTab(sub) {
+  ['validate','generate'].forEach(s => {
+    document.getElementById('n-'+s+'-pane').classList.toggle('hidden', s!==sub);
+    const btn = document.getElementById('nsub-'+s);
+    if(s===sub) { btn.className='flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-white text-primary shadow-sm transition-all'; }
+    else { btn.className='flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-on-surface-variant transition-all hover:text-on-surface'; }
+  });
+}
+
+function switchBizSubTab(sub) {
+  ['validate','generate'].forEach(s => {
+    document.getElementById('b-'+s+'-pane').classList.toggle('hidden', s!==sub);
+    const btn = document.getElementById('bsub-'+s);
+    if(s===sub) { btn.className='flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-white text-primary shadow-sm transition-all'; }
+    else { btn.className='flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-on-surface-variant transition-all hover:text-on-surface'; }
+  });
+}
+
+// ─── National ID Validate ─────────────────────────────────────────────────────
+
+function buildNationalTable(steps, total) {
+  return `
+  <div class="overflow-x-auto rounded-xl border border-gray-200">
+    <table class="w-full text-sm">
+      <thead><tr class="bg-gray-50">
+        ${['Position','Value','Weight','Contribution'].map(h=>`<th class="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400">${h}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        ${steps.map(s=>`<tr class="border-t border-gray-100 hover:bg-gray-50">
+          <td class="px-4 py-2.5 font-mono text-xs text-gray-500">${s.pos}</td>
+          <td class="px-4 py-2.5 font-mono font-bold">${s.val}</td>
+          <td class="px-4 py-2.5 font-mono text-gray-500">×${s.w}</td>
+          <td class="px-4 py-2.5 font-mono font-semibold text-primary">${s.contrib}</td>
+        </tr>`).join('')}
+      </tbody>
+      <tfoot><tr class="bg-gray-50 border-t-2 border-gray-200">
+        <td colspan="3" class="px-4 py-3 text-xs font-bold uppercase tracking-widest text-gray-400">Total S</td>
+        <td class="px-4 py-3 font-mono font-bold">${total} <span class="text-gray-400 font-normal">(${total} % 10 = <span class="${total%10===0?'text-green-600':'text-red-600'} font-bold">${total%10}</span>)</span></td>
+      </tr></tfoot>
+    </table>
+  </div>`;
+}
+
+function validateNational() {
+  const input = document.getElementById('n-input').value;
+  const res = validateNationalIdLogic(input);
+  const el = document.getElementById('n-result');
+
+  if (res.error) {
+    el.innerHTML = `<div class="flex items-center gap-3 p-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm font-medium">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+      ${res.error}</div>`;
+    return;
+  }
+
+  const gender = input[1]==='1' ? 'Male' : 'Female';
+  el.innerHTML = `
+    <div class="flex items-center gap-4 p-5 rounded-xl border mb-4 ${res.valid?'border-green-200 bg-green-50':'border-red-200 bg-red-50'}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="${res.valid?'#16a34a':'#dc2626'}" stroke-width="2" viewBox="0 0 24 24">
+        ${res.valid
+          ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>'
+          : '<circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/>'}
+      </svg>
+      <div>
+        <div class="text-xl font-extrabold ${res.valid?'text-green-700':'text-red-700'}">${res.valid?'VALID':'INVALID'}</div>
+        <div class="text-sm mt-0.5 text-gray-500">National ID Card (中華民國國民身分證)${res.valid?' · '+gender:''}</div>
+      </div>
+    </div>
+    ${buildNationalTable(res.steps, res.total)}`;
+}
+
+// ─── National ID Generate ─────────────────────────────────────────────────────
+
+function generateNational() {
+  const res = generateNationalIdLogic();
+  let stepsVisible = false;
+  const el = document.getElementById('n-gen-result');
+  el.innerHTML = `
+    <div class="flex items-center gap-3 p-5 bg-gray-50 rounded-xl border border-gray-200 mb-4">
+      <span class="flex-1 font-mono text-2xl font-bold tracking-[0.2em] text-center" id="gen-n-id">${res.id}</span>
+      <button onclick="copyText('${res.id}', this)" class="p-2 rounded-lg hover:bg-gray-200 transition-colors text-gray-500 hover:text-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+      </button>
+    </div>
+    <div class="flex gap-3 mb-4">
+      <button onclick="prefillNationalValidate('${res.id}')" class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Verify this ID
+      </button>
+      <button id="n-toggle-steps" onclick="toggleNSteps()" class="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+        <svg id="n-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        Show Calculation
+      </button>
+    </div>
+    <div id="n-steps-table" class="hidden">${buildNationalTable(res.steps, res.total)}</div>`;
+  window._nGenSteps = res.steps; window._nGenTotal = res.total;
+}
+
+function toggleNSteps() {
+  const el = document.getElementById('n-steps-table');
+  const chevron = document.getElementById('n-chevron');
+  const btn = document.getElementById('n-toggle-steps');
+  const hidden = el.classList.toggle('hidden');
+  chevron.innerHTML = hidden ? '<path d="m6 9 6 6 6-6"/>' : '<path d="m18 15-6-6-6 6"/>';
+  btn.innerHTML = (hidden?'<svg id="n-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>':'<svg id="n-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>') + (hidden?' Show ':' Hide ') + 'Calculation';
+}
+
+function prefillNationalValidate(id) {
+  switchNationalSubTab('validate');
+  document.getElementById('n-input').value = id;
+  validateNational();
+}
+
+// ─── Business Number Validate ─────────────────────────────────────────────────
+
+function buildBizTable(res) {
+  const specialNotice = res.d7Special ? `
+    <div class="flex items-start gap-3 p-3.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-xs mb-3">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="shrink-0 mt-0.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+      <span><strong>D7 = 7 Exception:</strong> 7 × 4 = 28 → 2+8 = 10 → counts as <strong>1</strong> (1+0) or <strong>0</strong>. Two sums are tested.</span>
+    </div>` : '';
+
+  const footerRows = res.d7Special ? `
+    <tr class="bg-gray-50 border-t-2 border-gray-200">
+      <td colspan="5" class="px-3 py-2.5 text-xs font-bold uppercase tracking-widest text-gray-400">Sum₁ (D7=1)</td>
+      <td class="px-3 py-2.5 font-mono font-bold">${res.sum1} <span class="${res.sum1%5===0?'text-green-600':'text-gray-400'} text-xs font-normal">(${res.sum1}%5=${res.sum1%5}${res.sum1%5===0?' ✓':''})</span></td>
+    </tr>
+    <tr class="bg-gray-50 border-t border-gray-200">
+      <td colspan="5" class="px-3 py-2.5 text-xs font-bold uppercase tracking-widest text-gray-400">Sum₂ (D7=0)</td>
+      <td class="px-3 py-2.5 font-mono font-bold">${res.sum2} <span class="${res.sum2%5===0?'text-green-600':'text-gray-400'} text-xs font-normal">(${res.sum2}%5=${res.sum2%5}${res.sum2%5===0?' ✓':''})</span></td>
+    </tr>` :
+    `<tr class="bg-gray-50 border-t-2 border-gray-200">
+      <td colspan="5" class="px-3 py-3 text-xs font-bold uppercase tracking-widest text-gray-400">Total S</td>
+      <td class="px-3 py-3 font-mono font-bold">${res.sum1} <span class="text-gray-400 font-normal">(${res.sum1}%5=<span class="${res.sum1%5===0?'text-green-600 font-bold':'text-red-600 font-bold'}">${res.sum1%5}</span>)</span></td>
+    </tr>`;
+
+  return specialNotice + `
+    <div class="overflow-x-auto rounded-xl border border-gray-200">
+      <table class="w-full text-sm">
+        <thead><tr class="bg-gray-50">
+          ${['Position','Digit','Weight','Product','After Split','Note'].map(h=>`<th class="px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400">${h}</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${res.steps.map((s,i)=>`<tr class="border-t border-gray-100 ${i===6&&res.d7Special?'bg-amber-50/50':'hover:bg-gray-50'}">
+            <td class="px-3 py-2.5 font-mono text-xs text-gray-500">${s.pos}</td>
+            <td class="px-3 py-2.5 font-mono font-bold">${s.digit}</td>
+            <td class="px-3 py-2.5 font-mono text-gray-500">×${s.w}</td>
+            <td class="px-3 py-2.5 font-mono">${s.prod}</td>
+            <td class="px-3 py-2.5 font-mono font-semibold text-primary">${s.after}</td>
+            <td class="px-3 py-2.5 text-xs text-gray-400 italic">${s.note||'—'}</td>
+          </tr>`).join('')}
+        </tbody>
+        <tfoot>${footerRows}</tfoot>
+      </table>
+    </div>`;
+}
+
+function validateBiz() {
+  const input = document.getElementById('b-input').value;
+  const res = validateBizLogic(input);
+  const el = document.getElementById('b-result');
+
+  if (res.error) {
+    el.innerHTML = `<div class="flex items-center gap-3 p-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm font-medium">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+      ${res.error}</div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="flex items-center gap-4 p-5 rounded-xl border mb-4 ${res.valid?'border-green-200 bg-green-50':'border-red-200 bg-red-50'}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="${res.valid?'#16a34a':'#dc2626'}" stroke-width="2" viewBox="0 0 24 24">
+        ${res.valid
+          ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>'
+          : '<circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/>'}
+      </svg>
+      <div>
+        <div class="text-xl font-extrabold ${res.valid?'text-green-700':'text-red-700'}">${res.valid?'VALID':'INVALID'}</div>
+        <div class="text-sm mt-0.5 text-gray-500">Unified Business Number (統一編號)${res.d7Special?' · D7=7 special case applied':''}</div>
+      </div>
+    </div>
+    ${buildBizTable(res)}`;
+}
+
+// ─── Business Number Generate ─────────────────────────────────────────────────
+
+function generateBiz() {
+  const res = generateBizLogic();
+  const num = res.number;
+  const el = document.getElementById('b-gen-result');
+  el.innerHTML = `
+    <div class="flex items-center gap-3 p-5 bg-gray-50 rounded-xl border border-gray-200 mb-4">
+      <span class="flex-1 font-mono text-2xl font-bold tracking-[0.2em] text-center">${num}</span>
+      <button onclick="copyText('${num}', this)" class="p-2 rounded-lg hover:bg-gray-200 transition-colors text-gray-500 hover:text-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+      </button>
+    </div>
+    <div class="flex gap-3 mb-4">
+      <button onclick="prefillBizValidate('${num}')" class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Verify this number
+      </button>
+      <button id="b-toggle-steps" onclick="toggleBSteps()" class="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        Show Calculation
+      </button>
+    </div>
+    <div id="b-steps-table" class="hidden">${buildBizTable(res)}</div>`;
+}
+
+function toggleBSteps() {
+  const el = document.getElementById('b-steps-table');
+  const btn = document.getElementById('b-toggle-steps');
+  const hidden = el.classList.toggle('hidden');
+  btn.innerHTML = (hidden
+    ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg> Show Calculation'
+    : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg> Hide Calculation');
+}
+
+function prefillBizValidate(num) {
+  switchBizSubTab('validate');
+  document.getElementById('b-input').value = num;
+  validateBiz();
+}
+
+// ─── Clipboard ────────────────────────────────────────────────────────────────
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#16a34a" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
+  });
+}
+</script>
+</body>
+</html>
